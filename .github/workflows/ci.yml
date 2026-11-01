@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1" # раз в неделю: не изменился ли API портала
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python pravo_mcp.py --selftest
+      - run: pip install -r requirements.txt
+      - name: HTTP-сервер
+        run: |
+          python server_http.py &
+          for i in $(seq 1 20); do curl -sf http://localhost:8080/ >/dev/null && break; sleep 1; done
+          scripts/smoke.sh http://localhost:8080/mcp
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t pravo-mcp .
+      - name: Контейнер
+        run: |
+          docker run -d -p 8080:8080 pravo-mcp
+          for i in $(seq 1 30); do curl -sf http://localhost:8080/ >/dev/null && break; sleep 1; done
+          scripts/smoke.sh http://localhost:8080/mcp
+
+  cloudflare:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cloudflare
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cloudflare/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Worker (wrangler dev)
+        run: |
+          npx wrangler dev --port 8787 &
+          for i in $(seq 1 60); do curl -sf http://localhost:8787/ >/dev/null && break; sleep 1; done
+          ../scripts/smoke.sh http://localhost:8787/mcp
