@@ -35,6 +35,27 @@ API портала открытый, только на чтение, ключ н
 **Settings → Connectors → Add custom connector**, адрес вида `https://<ваш-домен>/mcp`.
 Как поднять свой сервер: [Cloudflare](deploy/cloudflare.md) или [Yandex Cloud](deploy/yandex.md).
 
+### ChatGPT
+
+Нужен режим разработчика (Developer mode); на каких тарифах он доступен, смотрите в справке OpenAI.
+Settings → Apps & Connectors → Create (или New connector): адрес `https://<ваш-домен>/mcp`,
+аутентификация **No authentication**.
+
+### Codex
+
+```bash
+codex mcp add pravo --url https://<ваш-домен>/mcp
+```
+
+или в `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.pravo]
+url = "https://<ваш-домен>/mcp"
+```
+
+Локальная версия в Codex: `codex mcp add pravo -- python3 /полный/путь/к/pravo_mcp.py`.
+
 ### Локально (Claude Desktop)
 
 Файл `claude_desktop_config.json` (Settings → Developer → Edit Config) должен быть целым JSON-объектом:
@@ -108,6 +129,8 @@ and other acts, get document cards and links to official PDFs. The portal API is
 - **Local stdio:** [`pravo_mcp.py`](pravo_mcp.py), Python 3.8+, no dependencies.
 
 Add a remote server to Claude via **Settings → Connectors → Add custom connector** with the URL `https://<host>/mcp`.
+ChatGPT: Developer mode → new connector, URL `https://<host>/mcp`, no authentication.
+Codex: `codex mcp add pravo --url https://<host>/mcp`.
 
 ## License
 
